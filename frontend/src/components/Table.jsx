@@ -1,8 +1,15 @@
-import React from 'react'
+import React, { useState } from 'react'
 import axios from 'axios'
 import {MdOutlineDeleteOutline, MdEditNote, MdOutlineCheckBox, MdOutlineCheckBoxOutlineBlank} from 'react-icons/md'
 
 const Table = ({ todos, setTodos, isLoading }) => {
+  //Function to edit the state of Todo
+  const [editText, setEditText] = useState({
+    'body': ''
+  })
+
+
+
   //function to delete data based on id
   const handleDelete = async (id) => {
     try {
@@ -14,6 +21,35 @@ const Table = ({ todos, setTodos, isLoading }) => {
       console.log(error);
     }//end catch
   }//end handleDelete function
+
+  //Function to implement the ability to edit
+  const handleEdit = async(id, value) =>{
+    try{
+      const response = await axios.patch(`http://127.0.0.1:8000/api/todo/${id}/`, value)
+      const newTodos = todos.map(todo => todo.id === id ? response.data : todo)
+      setTodos(newTodos)
+    }catch(error) {
+      console.log(error);
+    }
+
+  }//end handleEdit function
+
+  const handleCheckbox = (id, value) => {
+    handleEdit(id, {
+      'completed': !value
+    })
+  }
+
+  const handleChange = (e) => {
+    setEditText(prev => ({
+      ...prev,
+      'body': e.target.value
+    }))
+    console.log(editText)
+  }
+
+
+
   return (
     <div className='py-2'>
       <table className='w-11/12 max-w-4x1'>
@@ -33,7 +69,8 @@ const Table = ({ todos, setTodos, isLoading }) => {
             return (
               <tr key={todoItem.id} className='border-b border-black'>
             <td className='p-3' title={todoItem.id}>
-            <span className='inline-block cursor-pointer'>{todoItem.completed ? <MdOutlineCheckBox /> :
+            <span onClick={() => handleCheckbox(todoItem.id, todoItem.completed)} 
+            className='inline-block cursor-pointer'>{todoItem.completed ? <MdOutlineCheckBox /> :
             <MdOutlineCheckBoxOutlineBlank />} </span>
             </td>
             <td className='p-3 text-sm'>{todoItem.body}</td>
@@ -44,7 +81,9 @@ const Table = ({ todos, setTodos, isLoading }) => {
             </td>
             <td className='p-3 text-sm'>{ new Date(todoItem.created).toLocaleString()}</td>
             <td className='p-3 text-sm font-medium grid grid-flow-col items-center mt-5'>
-              <span className='text-xl cursor-pointer'><MdEditNote /></span>
+              <span className='text-xl cursor-pointer'>
+              <label htmlFor="my_modal_6" className="btn"><MdEditNote /></label>
+                </span>
               <span className='text-xl cursor-pointer'><MdOutlineDeleteOutline onClick={ () => handleDelete(todoItem.id)} /></span>
             </td>
           </tr>
@@ -53,6 +92,22 @@ const Table = ({ todos, setTodos, isLoading }) => {
           }</>}
         </tbody>
       </table>
+
+      {/* Put this part before </body> tag */}
+      <input type="checkbox" id="my_modal_6" className="modal-toggle" />
+      <div className="modal" role="dialog">
+        <div className="modal-box">
+          <h3 className="font-bold text-lg">Edit Todo</h3>
+          <input type="text" placeholder="Type here" onChange={handleChange} className="input input-bordered w-full mt-8" />
+          <div className="modal-action">
+            <label htmlFor="my_modal_6" className="btn btn-primary">Edit</label>
+            <label htmlFor="my_modal_6" className="btn">Close</label>
+          </div>
+        </div>
+      </div>
+
+
+
     </div>
   )
 }
